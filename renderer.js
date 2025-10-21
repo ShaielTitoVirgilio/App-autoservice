@@ -1,4 +1,4 @@
-// MultipleFiles/renderer.js
+// renderer.js - Con sistema Admin
 console.log("electronAPI disponible:", window.electronAPI);
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,8 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartTotalAmountEl = document.getElementById('cart-total-amount');
     const emptyCartMessageEl = document.getElementsByClassName('empty-cart-message')[0];
 
-
-    // Modal de Producto
+    // Modal de Producto (Usuario normal)
     const productModal = document.getElementById('modal-product-customization');
     const modalProductNameEl = document.getElementById('modal-product-name');
     const modalProductImageEl = document.getElementById('modal-product-image');
@@ -28,6 +27,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalProductPriceEl = document.getElementById('modal-product-price');
     const modalCustomizationOptionsEl = document.getElementById('modal-customization-options');
     const modalQuantityInput = document.getElementById('modal-quantity');
+
+    // NUEVO: Elementos Admin
+    const adminAccessBtn = document.getElementById('admin-access-btn');
+    const adminPasswordModal = document.getElementById('modal-admin-password');
+    const adminPasswordInput = document.getElementById('admin-password-input');
+    const adminPasswordSubmit = document.getElementById('admin-password-submit');
+    const adminPasswordError = document.getElementById('admin-password-error');
+    const exitAdminBtn = document.getElementById('exit-admin-btn');
+    const adminEditModal = document.getElementById('modal-admin-edit');
+    const adminProductNameEl = document.getElementById('modal-admin-product-name');
+    const adminProductImageEl = document.getElementById('modal-admin-product-image');
+    const adminProductPriceInput = document.getElementById('admin-product-price');
+    const adminProductLockedCheckbox = document.getElementById('admin-product-locked');
+    const adminSaveChangesBtn = document.getElementById('admin-save-changes-btn');
 
     // Estado de la Aplicación
     let currentScreen = 'welcome';
@@ -37,61 +50,216 @@ document.addEventListener('DOMContentLoaded', () => {
     const INACTIVITY_TIMEOUT = 20000; // 20 segundos
     const THANKYOU_REDIRECT_DELAY = 6000; // 6 segundos
 
+    // NUEVO: Estado Admin
+    const ADMIN_PASSWORD = "1234"; // Contraseña simple y única
+    let isAdminMode = false;
+    let currentEditingProduct = null;
+
     // --- NAVEGACIÓN ENTRE PANTALLAS ---
     function showScreen(screenId) {
         const screenElement = screens[screenId] || document.getElementById(screenId);
         Object.values(screens).forEach(screen => screen.classList.remove('active'));
         if (screenElement) {
             screenElement.classList.add('active');
-            currentScreen = screenId.replace('screen-', ''); // Normalizar el nombre
+            currentScreen = screenId.replace('screen-', '');
             console.log("Mostrando pantalla:", screenId);
-            resetActivityTimer();
+            
+            // MODIFICADO: No resetear timer si estamos en modo admin
+            if (!isAdminMode) {
+                resetActivityTimer();
+            }
         } else {
             console.error("Pantalla no encontrada:", screenId);
         }
     }
-    
-
-
 
     // --- LÓGICA DE INACTIVIDAD ---
     function resetActivityTimer() {
         clearTimeout(activityTimer);
-        // Do not reset timer on payment or thankyou screens if they should auto-redirect
-        if (currentScreen !== 'welcome' && currentScreen !== 'thankyou') {
+        // MODIFICADO: No activar timer en modo admin
+        if (currentScreen !== 'welcome' && currentScreen !== 'thankyou' && !isAdminMode) {
             activityTimer = setTimeout(() => {
                 console.log("Inactividad detectada, volviendo al inicio.");
-                // Optional: show an alert before redirecting
-                // alert("Por inactividad, serás redirigido a la pantalla de bienvenida.");
-                cart = []; // Vaciar carrito por inactividad
+                cart = [];
                 updateCartDisplay();
                 showScreen('welcome');
             }, INACTIVITY_TIMEOUT);
         }
     }
+
     // Eventos para reiniciar el timer de inactividad
     document.body.addEventListener('click', resetActivityTimer);
     document.body.addEventListener('keypress', resetActivityTimer);
-    // Also listen for touch events on touch screens
     document.body.addEventListener('touchstart', resetActivityTimer);
 
+    // --- NUEVO: SISTEMA ADMIN ---
+
+    // Abrir modal de contraseña admin
+    adminAccessBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evitar que se active el click de bienvenida
+        adminPasswordModal.classList.remove('hidden');
+        adminPasswordInput.value = '';
+        adminPasswordError.classList.add('hidden');
+        adminPasswordInput.focus();
+    });
+
+    // Validar contraseña admin
+    adminPasswordSubmit.addEventListener('click', () => {
+        validateAdminPassword();
+    });
+
+    adminPasswordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            validateAdminPassword();
+        }
+    });
+
+    function validateAdminPassword() {
+        const enteredPassword = adminPasswordInput.value.trim();
+        
+        if (enteredPassword === ADMIN_PASSWORD) {
+            // Contraseña correcta
+            adminPasswordModal.classList.add('hidden');
+            enterAdminMode();
+        } else {
+            // Contraseña incorrecta
+            adminPasswordError.classList.remove('hidden');
+            adminPasswordInput.value = '';
+            adminPasswordInput.focus();
+            
+            // Ocultar error después de 3 segundos
+            setTimeout(() => {
+                adminPasswordError.classList.add('hidden');
+            }, 3000);
+        }
+    }
+
+    function enterAdminMode() {
+        isAdminMode = true;
+        document.body.classList.add('admin-mode-active');
+        exitAdminBtn.classList.remove('hidden');
+        
+        // Ir a pantalla de menú
+        showScreen('menu');
+        renderCategories();
+        
+        if (menuData.categorias.length > 0) {
+            const firstCategoryWithProducts = menuData.categorias.find(cat =>
+                menuData.productos[cat.id] && menuData.productos[cat.id].length > 0
+            );
+            if (firstCategoryWithProducts) {
+                renderProducts(firstCategoryWithProducts.id);
+                const firstCategoryButton = categoryListEl.querySelector(`li[data-category-id="${firstCategoryWithProducts.id}"]`);
+                if (firstCategoryButton) {
+                    firstCategoryButton.classList.add('active');
+                }
+            }
+        }
+        
+        console.log("Modo Admin activado");
+        showToast("Modo Administrador activado");
+    }
+
+    function exitAdminMode() {
+        isAdminMode = false;
+        document.body.classList.remove('admin-mode-active');
+        exitAdminBtn.classList.add('hidden');
+        
+        // Volver a pantalla de bienvenida
+        showScreen('welcome');
+        
+        console.log("Modo Admin desactivado");
+    }
+
+    // Botón de salir modo admin
+    exitAdminBtn.addEventListener('click', () => {
+        exitAdminMode();
+    });
+
+    // Cerrar modal de contraseña
+    document.querySelectorAll('.modal-close-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const modal = btn.closest('.modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    });
+
+    // Cerrar modales al hacer click en el backdrop
+    adminPasswordModal.addEventListener('click', (e) => {
+        if (e.target === adminPasswordModal) {
+            adminPasswordModal.classList.add('hidden');
+        }
+    });
+
+    adminEditModal.addEventListener('click', (e) => {
+        if (e.target === adminEditModal) {
+            adminEditModal.classList.add('hidden');
+        }
+    });
+
+    // Abrir modal de edición admin
+    function openAdminEditModal(product) {
+        currentEditingProduct = product;
+        
+        adminProductNameEl.textContent = product.nombre;
+        adminProductImageEl.src = product.img || 'assets/images/producto_placeholder.png';
+        adminProductPriceInput.value = product.precio;
+        adminProductLockedCheckbox.checked = product.locked || false;
+        
+        adminEditModal.classList.remove('hidden');
+    }
+
+    // Guardar cambios admin
+    adminSaveChangesBtn.addEventListener('click', () => {
+        if (!currentEditingProduct) return;
+        
+        const newPrice = parseFloat(adminProductPriceInput.value);
+        const isLocked = adminProductLockedCheckbox.checked;
+        
+        if (isNaN(newPrice) || newPrice < 0) {
+            alert("Por favor, ingresa un precio válido.");
+            return;
+        }
+        
+        // Actualizar el producto en menuData
+        currentEditingProduct.precio = newPrice;
+        currentEditingProduct.locked = isLocked;
+        
+        // Cerrar modal y re-renderizar productos
+        adminEditModal.classList.add('hidden');
+        
+        // Re-renderizar la categoría actual
+        const activeCategory = categoryListEl.querySelector('li.active');
+        if (activeCategory) {
+            const categoryId = activeCategory.dataset.categoryId;
+            renderProducts(categoryId);
+        }
+        
+        showToast(`Producto "${currentEditingProduct.nombre}" actualizado`);
+        console.log("Producto actualizado:", currentEditingProduct);
+    });
+
+    // --- FIN SISTEMA ADMIN ---
 
     // --- PANTALLA DE BIENVENIDA ---
     function initWelcomeScreen() {
-        // Adding a click listener to the entire welcome screen area
-        screens.welcome.addEventListener('click', () => {
-            // Only proceed if currently on the welcome screen
-            if (currentScreen === 'welcome') {
+        screens.welcome.addEventListener('click', (e) => {
+            // MODIFICADO: Solo proceder si NO se hizo click en el botón de admin
+            if (e.target.closest('#admin-access-btn')) {
+                return;
+            }
+            
+            if (currentScreen === 'welcome' && !isAdminMode) {
                 showScreen('menu');
                 renderCategories();
                 if (menuData.categorias.length > 0) {
-                    // Find the first category that actually has products
                     const firstCategoryWithProducts = menuData.categorias.find(cat =>
                         menuData.productos[cat.id] && menuData.productos[cat.id].length > 0
                     );
                     if (firstCategoryWithProducts) {
                         renderProducts(firstCategoryWithProducts.id);
-                        // Also activate the corresponding category button visually
                         const firstCategoryButton = categoryListEl.querySelector(`li[data-category-id="${firstCategoryWithProducts.id}"]`);
                         if (firstCategoryButton) {
                             firstCategoryButton.classList.add('active');
@@ -107,14 +275,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- PANTALLA DE MENÚ: CATEGORÍAS Y PRODUCTOS ---
     function renderCategories() {
-        categoryListEl.innerHTML = ''; // Limpiar categorías existentes
+        categoryListEl.innerHTML = '';
         menuData.categorias.forEach(category => {
             const li = document.createElement('li');
             li.textContent = `${category.icono || ''} ${category.nombre}`;
             li.dataset.categoryId = category.id;
             li.addEventListener('click', () => {
                 renderProducts(category.id);
-                // Marcar categoría activa
                 Array.from(categoryListEl.children).forEach(child => child.classList.remove('active'));
                 li.classList.add('active');
             });
@@ -122,11 +289,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    //Render de productos
     function renderProducts(categoryId) {
         const category = menuData.categorias.find(c => c.id === categoryId);
         currentCategoryTitleEl.textContent = category ? category.nombre : 'Productos';
-        productGridEl.innerHTML = ''; // Limpiar productos existentes
+        productGridEl.innerHTML = '';
 
         const productsInCategory = menuData.productos[categoryId] || [];
 
@@ -138,9 +304,30 @@ document.addEventListener('DOMContentLoaded', () => {
         productsInCategory.forEach(product => {
             const card = document.createElement('div');
             card.className = 'product-card';
-            // Add click listener to the card to open the modal
+            
+            // NUEVO: Agregar clases según modo admin y estado bloqueado
+            if (isAdminMode) {
+                card.classList.add('admin-mode');
+            }
+            if (product.locked) {
+                card.classList.add('locked');
+            }
+            
+            // MODIFICADO: Diferentes comportamientos según modo
             card.addEventListener('click', () => {
-                openProductModal(product);
+                if (product.locked && !isAdminMode) {
+                    // Producto bloqueado en modo usuario
+                    showToast("Producto no disponible");
+                    return;
+                }
+                
+                if (isAdminMode) {
+                    // Modo admin: abrir modal de edición
+                    openAdminEditModal(product);
+                } else {
+                    // Modo usuario: abrir modal de personalización
+                    openProductModal(product);
+                }
             });
 
             card.innerHTML = `
@@ -149,21 +336,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="product-description">${product.desc || ''}</p>
                 <p class="product-price">$${product.precio.toFixed(2)}</p>
                 ${product.personalizaciones && product.personalizaciones.length > 0 ? '<p class="product-has-customizations">Personalizable</p>' : ''}
-                 <button class="add-to-cart-btn primary-button hidden">Seleccionar</button>
             `;
-            // The button inside the card is now hidden; the card itself is clickable
+            
             productGridEl.appendChild(card);
         });
     }
 
-
-    // Helper function to get dynamic customization options based on product name
-    // This function now returns options grouped by category
+    // Helper function para personalizaciones dinámicas
     function getDynamicCustomizations(productName) {
         const nameLower = productName.toLowerCase();
-        const options = {}; // Use an object to group options
+        const options = {};
 
-        // Define common options groups
         const salsasOptions = [
             { id: 'salsa-mayo', nombre: 'Mayonesa', precio: 0 },
             { id: 'salsa-ketchup', nombre: 'Ketchup', precio: 0 },
@@ -193,22 +376,16 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 'extra-huevo', nombre: 'Huevo', precio: 30 }
         ];
 
-
-        // Map product names to customization groups
         if (nameLower.includes('hamburguesa')) {
-            
-            // Most burgers get Verduras and Salsas
-            if (!nameLower.includes('con jamón y queso') && !nameLower.includes('mixta con')) { // Jamon y Queso might not have standard veg/salsas
+            if (!nameLower.includes('con jamón y queso') && !nameLower.includes('mixta con')) {
                 options['Verduras'] = verdurasOptions;
             }
             options['Salsas'] = salsasOptions;
             
-            
-            // Add Extras to most burgers except basic ones and cajita
             if (!nameLower.includes('mixta con') && !nameLower.includes('con jamón y queso') && !nameLower.includes('cajita sorpresa')) {
                 options['Extras'] = extrasOptions;
             }
-            if (nameLower.includes('de pollo xl')) { // Specific extras for Chicken XL
+            if (nameLower.includes('de pollo xl')) {
                 options['Extras'] = [
                     { id: 'extra-jamon', nombre: 'Jamon extra', precio: 30 },
                     { id: 'extra-cheddar', nombre: 'Salsa cheddar', precio: 30 },
@@ -222,21 +399,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 options['Extras'] = [
                     { id: 'extra-cheddar', nombre: 'Salsa cheddar', precio: 50 }
                 ];
-            } else { // Especial del Paseo (or other non-completo)
+            } else {
                 options['Extras'] = [
-                    { id: 'extra-verduras', nombre: 'Verduras a elección', precio: 40 }, // Placeholder/option for adding any veg
+                    { id: 'extra-verduras', nombre: 'Verduras a elección', precio: 40 },
                     { id: 'extra-jamon', nombre: 'Jamón', precio: 60 }
                 ];
             }
         } else if (nameLower.includes('pancho')) {
             options['Salsas'] = salsasOptions;
-            // Add specific pancho extras if needed in the future
         } else if (nameLower.includes('papas fritas pequeñas')) {
             options['Salsas'] = salsasOptions;
             options['Extras'] = [
                 { id: 'extra-cheddar', nombre: 'Salsa cheddar', precio: 50 }
             ];
-        } else if (nameLower.includes('papa')) { // Medium or Large
+        } else if (nameLower.includes('papa')) {
             options['Salsas'] = salsasOptions;
             options['Extras'] = [
                 { id: 'extra-cheddar', nombre: 'Salsa cheddar', precio: 50 },
@@ -246,15 +422,13 @@ document.addEventListener('DOMContentLoaded', () => {
             options['Salsas'] = salsasOptions;
         } else if (nameLower.includes('chorizo completo')) {
             options['Verduras'] = verdurasOptions;
-            options['Salsas'] = salsasOptions; // Added salsas based on common sense, adjust if needed
-        } else if (nameLower.includes('chorizo')) { // Standard Chorizo
-            options['Salsas'] = salsasOptions; // Added salsas based on common sense, adjust if needed
+            options['Salsas'] = salsasOptions;
+        } else if (nameLower.includes('chorizo')) {
+            options['Salsas'] = salsasOptions;
         }
-        // Add logic for Sandwiches if they have specific customizations
 
         return options;
     }
-
 
     // --- MODAL DE PERSONALIZACIÓN DE PRODUCTO ---
     function openProductModal(product, itemToEdit = null) {
@@ -287,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     optionsContainer.className = 'customization-group-options hidden';
                     optionsContainer.id = titleEl.dataset.targetGroup;
     
-                    let salsaCount = 0; // Contador para las salsas seleccionadas
+                    let salsaCount = 0;
     
                     options.forEach(cust => {
                         const label = document.createElement('label');
@@ -298,13 +472,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         checkbox.dataset.name = cust.nombre;
                         checkbox.dataset.priceValue = (cust.precio || 0).toFixed(2);
     
-                        // Pre-check customizations if editing an existing item
                         if (itemToEdit && itemToEdit.personalizaciones.some(p => p.id === cust.id)) {
                             checkbox.checked = true;
                             salsaCount++;
                         }
     
-                        // Agregar evento para manejar la selección de salsas
                         checkbox.addEventListener('change', () => {
                             if (checkbox.checked) {
                                 salsaCount++;
@@ -312,7 +484,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 salsaCount--;
                             }
     
-                            // Deshabilitar checkboxes si se alcanzan 3 salsas
                             options.forEach(opt => {
                                 const optCheckbox = optionsContainer.querySelector(`input[value="${opt.id}"]`);
                                 if (salsaCount >= 3 && !optCheckbox.checked) {
@@ -352,112 +523,89 @@ document.addEventListener('DOMContentLoaded', () => {
         productModal.dataset.editingIndex = itemToEdit ? itemToEdit.originalIndex : '';
         productModal.classList.remove('hidden');
     }
-    
 
     function closeProductModal() {
         productModal.classList.add('hidden');
         currentSelectedProduct = null;
-        // Reset modal content if necessary (e.g., uncheck boxes)
         modalCustomizationOptionsEl.innerHTML = '';
         modalQuantityInput.value = 1;
-        productModal.dataset.editingIndex = ''; // Clear editing index
+        productModal.dataset.editingIndex = '';
     }
 
-    document.querySelectorAll('.modal-close-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            // const modalId = btn.dataset.targetModal; // Si tuvieras múltiples modales
-            closeProductModal();
-        });
-    });
-
-    // Add event listener to modal backdrop to close modal (optional but good UX)
     productModal.addEventListener('click', (event) => {
         if (event.target === productModal) {
             closeProductModal();
         }
     });
 
+    document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', () => {
+        if (!currentSelectedProduct) return;
 
-    // MultipleFiles/renderer.js (actualización)
+        const quantity = parseInt(modalQuantityInput.value, 10);
+        if (isNaN(quantity) || quantity <= 0) {
+            alert("Por favor, ingresa una cantidad válida.");
+            return;
+        }
 
-document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', () => {
-    if (!currentSelectedProduct) return;
+        const selectedCustomizations = [];
+        let customizationsPrice = 0;
 
-    const quantity = parseInt(modalQuantityInput.value, 10);
-    if (isNaN(quantity) || quantity <= 0) {
-        alert("Por favor, ingresa una cantidad válida.");
-        return;
-    }
+        modalCustomizationOptionsEl.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+            const cust = {
+                id: cb.value,
+                nombre: cb.dataset.name,
+                precio: parseFloat(cb.dataset.priceValue)
+            };
+            selectedCustomizations.push(cust);
+            customizationsPrice += cust.precio;
+        });
 
-    const selectedCustomizations = [];
-    let customizationsPrice = 0;
+        const finalPricePerUnit = currentSelectedProduct.precio + customizationsPrice;
+        const finalPriceTotal = finalPricePerUnit * quantity;
 
-    modalCustomizationOptionsEl.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-        const cust = {
-            id: cb.value,
-            nombre: cb.dataset.name,
-            precio: parseFloat(cb.dataset.priceValue)
+        const cartItem = {
+            groupingKey: currentSelectedProduct.id + '-' + selectedCustomizations.map(c => c.id).sort().join('-'),
+            productId: currentSelectedProduct.id,
+            nombre: currentSelectedProduct.nombre,
+            cantidad: quantity,
+            precioUnitarioBase: currentSelectedProduct.precio,
+            precioUnitarioConPersonalizacion: finalPricePerUnit,
+            precioTotal: finalPriceTotal,
+            personalizaciones: selectedCustomizations.sort((a, b) => a.id.localeCompare(b.id)),
+            img: currentSelectedProduct.img
         };
-        selectedCustomizations.push(cust);
-        customizationsPrice += cust.precio;
+
+        const editingIndex = productModal.dataset.editingIndex;
+
+        if (editingIndex !== '') {
+            cart[editingIndex] = cartItem;
+            console.log("Item actualizado en el carrito:", cartItem);
+        } else {
+            addToCart(cartItem);
+        }
+
+        updateCartDisplay();
+        closeProductModal();
     });
-
-    const finalPricePerUnit = currentSelectedProduct.precio + customizationsPrice;
-    const finalPriceTotal = finalPricePerUnit * quantity;
-
-    const cartItem = {
-        groupingKey: currentSelectedProduct.id + '-' + selectedCustomizations.map(c => c.id).sort().join('-'),
-        productId: currentSelectedProduct.id,
-        nombre: currentSelectedProduct.nombre,
-        cantidad: quantity,
-        precioUnitarioBase: currentSelectedProduct.precio,
-        precioUnitarioConPersonalizacion: finalPricePerUnit,
-        precioTotal: finalPriceTotal, // Asegurarnos que usamos el precio calculado
-        personalizaciones: selectedCustomizations.sort((a, b) => a.id.localeCompare(b.id)),
-        img: currentSelectedProduct.img
-    };
-
-    const editingIndex = productModal.dataset.editingIndex;
-
-    if (editingIndex !== '') {
-        // Reemplazar el item existente en el carrito
-        cart[editingIndex] = cartItem; // Asignación directa en lugar de splice
-        console.log("Item actualizado en el carrito:", cartItem);
-    } else {
-        // Agregar como nuevo item
-        addToCart(cartItem);
-    }
-
-    updateCartDisplay(); // Forzar la actualización del carrito
-    closeProductModal();
-});
-
-
-
-
 
     // --- LÓGICA DEL CARRITO ---
     function addToCart(item) {
-        // Check if an item with the same groupingKey (product + customizations) exists
         const existingItemIndex = cart.findIndex(cartItem => cartItem.groupingKey === item.groupingKey);
 
         if (existingItemIndex > -1) {
-            // If item exists, update its quantity and total
             cart[existingItemIndex].cantidad += item.cantidad;
             cart[existingItemIndex].precioTotal = cart[existingItemIndex].precioUnitarioConPersonalizacion * cart[existingItemIndex].cantidad;
             console.log("Cantidad actualizada para item existente:", cart[existingItemIndex]);
         } else {
-            // If item does not exist, add it to the cart
             cart.push(item);
             console.log("Nuevo item agregado al carrito:", item);
         }
 
         updateCartDisplay();
-        // showItemAddedAnimation(item); // Optional animation
     }
 
     function updateCartDisplay() {
-        cartItemsContainerEl.innerHTML = ''; // Limpiar
+        cartItemsContainerEl.innerHTML = '';
         let totalGeneral = 0;
 
         if (cart.length === 0) {
@@ -469,7 +617,6 @@ document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', 
                 const itemEl = document.createElement('div');
                 itemEl.className = 'cart-item';
 
-                // Display customizations clearly
                 let personalizacionesStr = item.personalizaciones.map(p => p.nombre).join(', ');
                 if (!personalizacionesStr) personalizacionesStr = 'Estándar';
 
@@ -495,16 +642,14 @@ document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', 
         cartTotalAmountEl.textContent = totalGeneral.toFixed(2);
         cartCountEl.textContent = cart.reduce((acc, item) => acc + item.cantidad, 0);
 
-        // Habilitar o deshabilitar botón de checkout
         document.getElementById('checkout-btn').disabled = cart.length === 0;
     }
 
     cartItemsContainerEl.addEventListener('click', (event) => {
         const target = event.target;
-        // Find the closest parent with data-index to handle clicks on child elements within the button
         const button = target.closest('button[data-index]');
 
-        if (!button) return; // Exit if the clicked element or its parent is not a button with data-index
+        if (!button) return;
 
         const itemIndex = parseInt(button.dataset.index, 10);
 
@@ -520,7 +665,6 @@ document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', 
                     cart[itemIndex].cantidad--;
                     cart[itemIndex].precioTotal = cart[itemIndex].precioUnitarioConPersonalizacion * cart[itemIndex].cantidad;
                 } else {
-                    // Si cantidad es 1 y se presiona '-', se elimina
                     cart.splice(itemIndex, 1);
                 }
                 updateCartDisplay();
@@ -530,10 +674,9 @@ document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', 
                 cart.splice(itemIndex, 1);
                 updateCartDisplay();
             }
-        } else if (button.classList.contains('edit-item')) { // Nuevo: Manejar el botón de edición
+        } else if (button.classList.contains('edit-item')) {
             if (cart[itemIndex]) {
-                const itemToEdit = { ...cart[itemIndex], originalIndex: itemIndex }; // Pass a copy and its original index
-                // Find the original product data from menuData
+                const itemToEdit = { ...cart[itemIndex], originalIndex: itemIndex };
                 let originalProduct = null;
                 for (const categoryId in menuData.productos) {
                     originalProduct = menuData.productos[categoryId].find(p => p.id === itemToEdit.productId);
@@ -548,23 +691,20 @@ document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', 
                 }
             }
         }
-        // updateCartDisplay() is called inside each action to ensure the display is updated immediately
     });
-
 
     document.getElementById('view-cart-btn').addEventListener('click', () => showScreen('cart'));
     document.getElementById('back-to-menu-btn').addEventListener('click', () => showScreen('menu'));
     document.getElementById('checkout-btn').addEventListener('click', () => {
         if (cart.length > 0) {
             const ticketData = {
-                orderNumber: Math.floor(1000 + Math.random() * 9000), // Número de orden aleatorio de 4 dígitos
+                orderNumber: Math.floor(1000 + Math.random() * 9000),
                 items: cart.map(item => ({
                     nombre: item.nombre,
                     cantidad: item.cantidad,
                     personalizaciones: item.personalizaciones,
                     precioTotal: item.precioTotal
                 })),
-
                 total: parseFloat(cartTotalAmountEl.textContent)
             };
             console.log("Enviando ticket a imprimir...");
@@ -573,8 +713,6 @@ document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', 
             alert("Tu carrito está vacío.");
         }
     });
-
-
 
     window.electronAPI.onPrintComplete((event, response) => {
         console.log("Respuesta de impresión recibida:", response);
@@ -586,11 +724,9 @@ document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', 
                 orderNumberDisplay.textContent = `#${response.orderNumber}`;
             }
             
-            // Limpiar carrito
             cart = [];
             updateCartDisplay();
             
-            // ✅ CORREGIDO: Mostrar la pantalla correcta
             showScreen('screen-thankyou');
             startThankYouRedirectTimer();
         } else {
@@ -623,15 +759,17 @@ document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', 
     function showToast(message) {
         const toast = document.getElementById('toast');
         toast.textContent = message;
+        toast.style.backgroundColor = 'var(--success-color)';
         toast.classList.add('show');
         setTimeout(() => {
             toast.classList.remove('show');
-        }, 6000); // Mostrar por 3 segundos
+        }, 3000);
     }
+    
     function showError(message) {
         const toast = document.getElementById('toast');
         toast.textContent = message;
-        toast.style.backgroundColor = 'var(--error-color)'; // Rojo para errores
+        toast.style.backgroundColor = 'var(--error-color)';
         toast.classList.add('show');
         setTimeout(() => {
             toast.classList.remove('show');
@@ -640,6 +778,6 @@ document.getElementById('add-to-cart-from-modal-btn').addEventListener('click', 
 
     // --- INICIALIZACIÓN ---
     initWelcomeScreen();
-    showScreen('welcome'); // Iniciar en la pantalla de bienvenida
-    updateCartDisplay(); // Ensure cart display is correct on load (should be empty)
+    showScreen('welcome');
+    updateCartDisplay();
 });
