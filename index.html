@@ -10,27 +10,60 @@
     <div id="app-container">
 
         <section id="screen-welcome" class="screen active">
+            <!-- NUEVO: Botón de acceso admin -->
+            <button id="admin-access-btn" class="admin-access-button" title="Acceso Administrador">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </button>
+            
             <img src="assets/images/logo.png" alt="Logo del Comercio" id="welcome-logo">
             <div class="welcome-text-overlay">
-                
                 <p class="touch-to-start">¡Tocá la pantalla para comenzar tu pedido!</p>
             </div>
         </section>
 
+        <!-- NUEVO: Modal de contraseña admin -->
+        <div id="modal-admin-password" class="modal hidden">
+            <div class="modal-content modal-password">
+                <button class="modal-close-btn" data-target-modal="modal-admin-password">&times;</button>
+                <h2>Acceso Administrador</h2>
+                <p>Ingresa la contraseña:</p>
+                <input type="password" id="admin-password-input" placeholder="Contraseña" maxlength="10">
+                <p id="admin-password-error" class="password-error hidden">Contraseña incorrecta</p>
+                <div class="modal-actions">
+                    <button id="admin-password-submit" class="primary-button">Ingresar</button>
+                </div>
+            </div>
+        </div>
+
         <section id="screen-menu" class="screen">
+            <!-- NUEVO: Botón para cerrar modo admin -->
+            <button id="exit-admin-btn" class="exit-admin-button hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Salir Modo Admin
+            </button>
+
             <aside id="category-sidebar">
                 <h2>Categorías</h2>
                 <ul id="category-list">
-                    </ul>
+                </ul>
             </aside>
             <main id="product-area">
                 <h2 id="current-category-title">Selecciona una categoría</h2>
                 <div id="product-grid">
-                    </div>
+                </div>
             </main>
             <button id="view-cart-btn" class="floating-action-button">🛒 Carrito (<span id="cart-count">0</span>)</button>
         </section>
+
         <div id="toast" class="toast">Producto añadido al carrito</div>
+
+        <!-- Modal de producto - Usuario normal -->
         <div id="modal-product-customization" class="modal hidden">
             <div class="modal-content">
                 <button class="modal-close-btn" data-target-modal="modal-product-customization">&times;</button>
@@ -39,7 +72,7 @@
                 <p id="modal-product-desc">Descripción del producto.</p>
                 <p>Precio Base: $<span id="modal-product-price">0.00</span></p>
                 <div id="modal-customization-options">
-                    </div>
+                </div>
                 <div class="modal-actions">
                     <label for="modal-quantity">Cantidad:</label>
                     <input type="number" id="modal-quantity" value="1" min="1" max="99"> 
@@ -48,11 +81,36 @@
             </div>
         </div>
 
+        <!-- NUEVO: Modal de edición admin -->
+        <div id="modal-admin-edit" class="modal hidden">
+            <div class="modal-content">
+                <button class="modal-close-btn" data-target-modal="modal-admin-edit">&times;</button>
+                <h2 id="modal-admin-product-name">Editar Producto</h2>
+                <img id="modal-admin-product-image" src="assets/images/producto_placeholder.png" alt="Producto">
+                
+                <div class="admin-edit-section">
+                    <label for="admin-product-price">Precio:</label>
+                    <input type="number" id="admin-product-price" min="0" step="1" placeholder="0">
+                </div>
+
+                <div class="admin-edit-section">
+                    <label class="admin-checkbox-label">
+                        <input type="checkbox" id="admin-product-locked">
+                        <span>🔒 Bloquear producto (sin stock)</span>
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="admin-save-changes-btn" class="primary-button">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+
         <section id="screen-cart" class="screen">
             <h2>Tu Pedido</h2>
             <div id="cart-items-container">
-                 </div>
-             <p class="empty-cart-message hidden">Tu carrito está vacío.</p> 
+            </div>
+            <p class="empty-cart-message hidden">Tu carrito está vacío.</p> 
             <div id="cart-summary">
                 <h3>Total del Pedido: $<span id="cart-total-amount">0.00</span></h3>
             </div>
@@ -60,7 +118,6 @@
                 <button id="back-to-menu-btn">Seguir Comprando</button>
                 <button id="checkout-btn" class="primary-button">Confirmar</button>
             </div>
-
         </section>
 
         <section id="screen-thankyou" class="screen">
