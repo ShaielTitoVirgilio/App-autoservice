@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito Del Paseo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+
+        <section id="screen-welcome" class="screen active">
+            <img src="assets/images/logo.png" alt="Logo del Comercio" id="welcome-logo">
+            <div class="welcome-text-overlay">
+                
+                <p class="touch-to-start">¡Tocá la pantalla para comenzar tu pedido!</p>
+            </div>
+        </section>
+
+        <section id="screen-menu" class="screen">
+            <aside id="category-sidebar">
+                <h2>Categorías</h2>
+                <ul id="category-list">
+                    </ul>
+            </aside>
+            <main id="product-area">
+                <h2 id="current-category-title">Selecciona una categoría</h2>
+                <div id="product-grid">
+                    </div>
+            </main>
+            <button id="view-cart-btn" class="floating-action-button">🛒 Carrito (<span id="cart-count">0</span>)</button>
+        </section>
+        <div id="toast" class="toast">Producto añadido al carrito</div>
+        <div id="modal-product-customization" class="modal hidden">
+            <div class="modal-content">
+                <button class="modal-close-btn" data-target-modal="modal-product-customization">&times;</button>
+                <h2 id="modal-product-name">Nombre del Producto</h2>
+                <img id="modal-product-image" src="assets/images/producto_placeholder.png" alt="Producto">
+                <p id="modal-product-desc">Descripción del producto.</p>
+                <p>Precio Base: $<span id="modal-product-price">0.00</span></p>
+                <div id="modal-customization-options">
+                    </div>
+                <div class="modal-actions">
+                    <label for="modal-quantity">Cantidad:</label>
+                    <input type="number" id="modal-quantity" value="1" min="1" max="99"> 
+                    <button id="add-to-cart-from-modal-btn" class="primary-button">Agregar al Carrito</button> 
+                </div>
+            </div>
+        </div>
+
+        <section id="screen-cart" class="screen">
+            <h2>Tu Pedido</h2>
+            <div id="cart-items-container">
+                 </div>
+             <p class="empty-cart-message hidden">Tu carrito está vacío.</p> 
+            <div id="cart-summary">
+                <h3>Total del Pedido: $<span id="cart-total-amount">0.00</span></h3>
+            </div>
+            <div class="cart-actions">
+                <button id="back-to-menu-btn">Seguir Comprando</button>
+                <button id="checkout-btn" class="primary-button">Confirmar</button>
+            </div>
+
+        </section>
+
+        <section id="screen-thankyou" class="screen">
+            <h2>¡Gracias por tu compra!</h2>
+            <p>Retira tu ticket y dirigete a la caja.</p>
+            <p>Tu número de orden interno es: <span id='order-number-display'>#000000</span></p>
+            <p class="info-note">Este número es solo para uso interno. En caja se te asignará un nuevo número para retirar tu pedido.</p>
+            <p class="redirect-notice">Volviendo al inicio en <span id='thankyou-redirect-timer'>6</span>s...</p>
+        </section>
+
+    </div>
+
+    <script src="data/menu.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html>
