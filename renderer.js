@@ -3,6 +3,9 @@ console.log("electronAPI disponible:", window.electronAPI);
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    let menuDataDefault = { ...menuData }; // Guardar copia de valores por defecto
+    let menuLoaded = false;
+
     // Referencias a Elementos del DOM
     const screens = {
         welcome: document.getElementById('screen-welcome'),
@@ -72,6 +75,31 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Pantalla no encontrada:", screenId);
         }
     }
+
+    // Función para cargar datos guardados
+async function loadSavedMenuData() {
+    try {
+        const result = await window.electronAPI.getMenuData();
+        
+        if (result.success && result.data) {
+            // Hay datos guardados, usarlos
+            menuData = result.data;
+            console.log('[RENDERER] Menú cargado desde almacenamiento');
+            console.log('Productos cargados:', Object.keys(menuData.productos).length, 'categorías');
+        } else {
+            // No hay datos guardados, usar los valores por defecto de menu.js
+            console.log('[RENDERER] Usando menú por defecto (primera vez)');
+            // Guardar los valores por defecto en el store
+            await window.electronAPI.saveMenuData(menuData);
+        }
+    } catch (error) {
+        console.error('[RENDERER] Error al cargar menú:', error);
+        // En caso de error, usar valores por defecto
+    }
+    
+    menuLoaded = true;
+}
+
 
     // --- LÓGICA DE INACTIVIDAD ---
     function resetActivityTimer() {
@@ -212,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Guardar cambios admin
-    adminSaveChangesBtn.addEventListener('click', () => {
+    adminSaveChangesBtn.addEventListener('click', async () => {
         if (!currentEditingProduct) return;
         
         const newPrice = parseFloat(adminProductPriceInput.value);
@@ -227,6 +255,22 @@ document.addEventListener('DOMContentLoaded', () => {
         currentEditingProduct.precio = newPrice;
         currentEditingProduct.locked = isLocked;
         
+        // NUEVO: Guardar en electron-store
+        try {
+            const result = await window.electronAPI.saveMenuData(menuData);
+            
+            if (result.success) {
+                console.log('[RENDERER] Cambios guardados en almacenamiento');
+                showToast(`Producto "${currentEditingProduct.nombre}" actualizado y guardado`);
+            } else {
+                console.error('[RENDERER] Error al guardar:', result.error);
+                showError('Error al guardar los cambios');
+            }
+        } catch (error) {
+            console.error('[RENDERER] Error al guardar cambios:', error);
+            showError('Error al guardar los cambios');
+        }
+        
         // Cerrar modal y re-renderizar productos
         adminEditModal.classList.add('hidden');
         
@@ -237,9 +281,9 @@ document.addEventListener('DOMContentLoaded', () => {
             renderProducts(categoryId);
         }
         
-        showToast(`Producto "${currentEditingProduct.nombre}" actualizado`);
         console.log("Producto actualizado:", currentEditingProduct);
     });
+    
 
     // --- FIN SISTEMA ADMIN ---
 
@@ -777,7 +821,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- INICIALIZACIÓN ---
-    initWelcomeScreen();
-    showScreen('welcome');
-    updateCartDisplay();
+    async function initialize() {
+        await loadSavedMenuData(); // Cargar datos guardados primero
+        initWelcomeScreen();
+        showScreen('welcome');
+        updateCartDisplay();
+    }
+    
+    initialize()
 });
