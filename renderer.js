@@ -1,4 +1,5 @@
 // renderer.js - Con sistema Admin
+
 console.log("electronAPI disponible:", window.electronAPI);
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -822,10 +823,12 @@ async function loadSavedMenuData() {
 
     // --- INICIALIZACIÓN ---
     async function initialize() {
+        await window.electronAPI.resetMenuData();
         await loadSavedMenuData(); // Cargar datos guardados primero
         initWelcomeScreen();
         showScreen('welcome');
         updateCartDisplay();
+        window.electronAPI.resetMenuData();
     }
     
     initialize()

@@ -16,11 +16,13 @@ let menuData = {
             { id: 'hamb2', nombre: "Hamburguesa Con Jamón y Queso", desc:"Hamburguesa hamby (85g) con jamon y queso", precio: 148, img: "assets/images/jamonYqueso.png", personalizaciones: [] },
             { id: 'hamb3', nombre: "Hamburguesa Completa", desc:"Hamburguesa hamby (85g) con jamon y queso + verduras a elección", precio: 175, img: "assets/images/hamburguesa3.png", personalizaciones: []},
             { id: 'hamb4', nombre: "Hamburguesa Con Queso Colby y Panceta", desc:"Hamburguesa hamby (85g) con queso colby y panceta", precio: 165, img: "assets/images/hamburguesa3.png", personalizaciones: [] },
-            { id: 'hamb5', nombre: "Hamburguesa Gigante del Paseo", desc:"Hamburguesa hamby (85g) con queso colby y panceta", precio: 230, img: "assets/images/gigante.png", personalizaciones: [] },
+            { id: 'hamb5', nombre: "Hamburguesa Gigante del Paseo", desc:"Hamburguesa hamby (85g) con queso colby y panceta", precio: 230, img: "assets/images/gigante.jpg", personalizaciones: [] },
             { id: 'hamb6', nombre: "Hamburguesa de Pollo completa", desc:"Hamburguesa sadinesa de pollo con jamon y queso + verduras a elección", precio: 175, img: "assets/images/hamburguesa3.png", personalizaciones: [] },
             { id: 'hamb7', nombre: "Hamburguesa de Pollo XL Crocante", desc:"Pechuga de pollo con queso colby, panceta y huevo frito + verduras a elección", precio: 228, img: "assets/images/xlPollo.png", personalizaciones: [] },
-            { id: 'hamb8', nombre: "Hamburguesa Doble XL Carne", desc:"Doble hamburguesa hamby con queso colby, panceta y huevo frito + verduras a elección", precio: 250, img: "assets/images/xlCarne.png", personalizaciones: [] },
-            { id: 'hamb9', nombre: "Cajita Sorpresa", desc:"Hamburguesa, juguete papas", precio: 175, img: "assets/images/cajita.png", personalizaciones: [] }
+            { id: 'hamb8', nombre: "Hamburguesa Doble XL Carne", desc:"Doble hamburguesa hamby con queso colby, panceta y huevo frito + verduras a elección", precio: 250, img: "assets/images/XLdecarne.png", personalizaciones: [] },
+            { id: 'hamb9', nombre: "Cajita Sorpresa", desc:"Hamburguesa, juguete papas", precio: 175, img: "assets/images/cajitafeliz.png", personalizaciones: [] },
+            { id: 'hamb10', nombre: "Hamburguesa Veggie", desc:"Hamburguesa 100% vegetariana a base de lenteja", precio: 315, img: "assets/images/veggie.png", personalizaciones: [] }
+
         ],
         chivitos: [
             {id: 'chiv1', nombre: "Chivito Especial del Paseo", desc:"Churrasco de lomo con queso muzza, panceta, huevo frito, lechuga, tomate y cebolla ", precio: 365,img: "assets/images/chivitoSimple.png", personalizaciones: []},
@@ -35,14 +37,14 @@ let menuData = {
         ],
         papas: [
             { id: 'papas1', nombre: "Papas Fritas Pequeñas", desc:"Calidad Mcein", precio: 65, img: "assets/images/papas1.png", personalizaciones: [] },
-            { id: 'papas2', nombre: "Papas Fritas Medianas", desc:"Calidad Mcein", precio: 115, img: "assets/images/papas2.png", personalizaciones: [] },
-            { id: 'papas3', nombre: "Papas Fritas Grandes", desc:"Calidad Mcein", precio: 195, img: "assets/images/papasBandeja.png", personalizaciones: [] },
+            { id: 'papas2', nombre: "Papas Fritas Medianas", desc:"Calidad Mcein", precio: 115, img: "assets/images/papasMed.png", personalizaciones: [] },
+            { id: 'papas3', nombre: "Papas Fritas Grandes", desc:"Calidad Mcein", precio: 195, img: "assets/images/badneja-cheddar-panceta.png", personalizaciones: [] },
         ],
         nuggets: [
             {id: 'nug1', nombre: "Nuggets De Pollo x7 Unidades", desc:"Calidad Sadia", precio:150, img:"assets/images/producto_placeholder.png", personalizaciones: []}
         ],
         sandwiches:[
-            {id: 'sand1', nombre: "Calientes", desc:"Descripción Sándwich Caliente", precio:195, img:"assets/images/producto_placeholder.png", personalizaciones: []},
+            {id: 'sand1', nombre: "Calientes", desc:"Descripción Sándwich Caliente", precio:195, img:"assets/images/caliente.png", personalizaciones: []},
             {id: 'sand2', nombre: "Calientes con Muzzarella", desc:"Descripción Sándwich Caliente con Muzzarella", precio:240, img:"assets/images/sandwichMuzza.png", personalizaciones: []}
         ],
         chorizos:[
