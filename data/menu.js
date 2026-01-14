@@ -16,11 +16,11 @@ let menuData = {
             { id: 'hamb2', nombre: "Hamburguesa Con Jamón y Queso", desc:"Hamburguesa hamby (85g) con jamon y queso", precio: 148, img: "assets/images/jamonYqueso.png", personalizaciones: [] },
             { id: 'hamb3', nombre: "Hamburguesa Completa", desc:"Hamburguesa hamby (85g) con jamon y queso + verduras a elección", precio: 175, img: "assets/images/hamburguesa3.png", personalizaciones: []},
             { id: 'hamb4', nombre: "Hamburguesa Con Queso Colby y Panceta", desc:"Hamburguesa hamby (85g) con queso colby y panceta", precio: 165, img: "assets/images/hamburguesa3.png", personalizaciones: [] },
-            { id: 'hamb5', nombre: "Hamburguesa Gigante del Paseo", desc:"Hamburguesa hamby (85g) con queso colby y panceta", precio: 230, img: "assets/images/gigante.jpg", personalizaciones: [] },
+            { id: 'hamb5', nombre: "Hamburguesa Gigante del Paseo", desc:"Hamburguesa hamby (85g) con queso colby y panceta", precio: 230, img: "assets/images/gigante.jpg",video: "assets/videos/gigante.mp4", personalizaciones: [] },
             { id: 'hamb6', nombre: "Hamburguesa de Pollo completa", desc:"Hamburguesa sadinesa de pollo con jamon y queso + verduras a elección", precio: 175, img: "assets/images/hamburguesa3.png", personalizaciones: [] },
             { id: 'hamb7', nombre: "Hamburguesa de Pollo XL Crocante", desc:"Pechuga de pollo con queso colby, panceta y huevo frito + verduras a elección", precio: 228, img: "assets/images/xlPollo.png", personalizaciones: [] },
-            { id: 'hamb8', nombre: "Hamburguesa Doble XL Carne", desc:"Doble hamburguesa hamby con queso colby, panceta y huevo frito + verduras a elección", precio: 250, img: "assets/images/XLdecarne.png", personalizaciones: [] },
-            { id: 'hamb9', nombre: "Cajita Sorpresa", desc:"Hamburguesa, juguete papas", precio: 175, img: "assets/images/cajitafeliz.png", personalizaciones: [] },
+            { id: 'hamb8', nombre: "Hamburguesa Doble XL Carne", desc:"Doble hamburguesa hamby con queso colby, panceta y huevo frito + verduras a elección", precio: 250, img: "assets/images/XLdecarne.png",video: "assets/videos/xlCarne.mp4", personalizaciones: [] },
+            { id: 'hamb9', nombre: "Cajita Sorpresa", desc:"Hamburguesa, juguete papas", precio: 175, img: "assets/images/cajitafeliz.png",video: "assets/videos/cajita.mp4", personalizaciones: [] },
             { id: 'hamb10', nombre: "Hamburguesa Veggie", desc:"Hamburguesa 100% vegetariana a base de lenteja", precio: 315, img: "assets/images/veggie.png", personalizaciones: [] }
 
         ],

@@ -479,7 +479,21 @@ async function loadSavedMenuData() {
     function openProductModal(product, itemToEdit = null) {
         currentSelectedProduct = product;
         modalProductNameEl.textContent = product.nombre;
-        modalProductImageEl.src = product.img || 'assets/images/producto_placeholder.png';
+        const modalProductVideoEl = document.getElementById('modal-product-video');
+
+if (product.video) {
+  modalProductVideoEl.src = product.video;
+  modalProductVideoEl.classList.remove('hidden');
+  modalProductImageEl.classList.add('hidden');
+  modalProductVideoEl.currentTime = 0;
+  modalProductVideoEl.play();
+} else {
+  modalProductVideoEl.pause();
+  modalProductVideoEl.classList.add('hidden');
+  modalProductImageEl.classList.remove('hidden');
+  modalProductImageEl.src = product.img || 'assets/images/producto_placeholder.png';
+}
+
         modalProductDescEl.textContent = product.desc || 'Sin descripción disponible.';
         modalProductPriceEl.textContent = product.precio.toFixed(2);
         modalQuantityInput.value = itemToEdit ? itemToEdit.cantidad : 1;

@@ -1,23 +1,33 @@
 {
     "name": "kiosko-app",
     "version": "1.0.0",
-    "description": "Aplicación de Kiosko de Autoservicio para Comidas Rápidas",
+    "description": "Aplicación de Kiosko de Autoservicio para Carrito del paseo",
     "main": "main.js",
-    "scripts": {
-        "start": "electron .",
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "keywords": [
-        "kiosko",
-        "autoservicio",
-        "electron"
-    ],
-    "author": "Tu Nombre",
+    "author": "Shaiel Tito Virgilio",
     "license": "MIT",
+    "scripts": {
+      "start": "electron .",
+      "build": "electron-builder"
+    },
+    "build": {
+      "appId": "com.kiosko.app",
+      "productName": "KioskoApp",
+      "files": [
+        "**/*"
+      ],
+      "directories": {
+        "output": "dist"
+      },
+      "win": {
+        "target": "nsis"
+      }
+    },
     "devDependencies": {
-        "electron": "^28.0.0"
+      "electron": "^28.0.0",
+      "electron-builder": "^24.9.1"
     },
     "dependencies": {
-        "electron-store": "^8.2.0"
+      "electron-store": "^8.2.0"
     }
-}
+  }
+  
