@@ -37,27 +37,46 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Simulación de impresión de ticket
-ipcMain.on('print-ticket', (event, ticketData) => {
-  console.log("--- INICIO TICKET (Interno) ---");
+
+function imprimirTicket(ticketData, numeroCopia) {
+  console.log(`--- INICIO TICKET (Interno) #${numeroCopia} ---`);
   console.log("Carrito del paseo");
   console.log(`Fecha: ${new Date().toLocaleDateString()} Hora: ${new Date().toLocaleTimeString()}`);
   console.log("------------------------------------");
+
   ticketData.items.forEach(item => {
-    console.log(`${item.cantidad}x ${item.nombre} (${(item.personalizaciones || []).map(p => p.nombre).join(', ') || 'Estándar'}) - $${item.precioTotal.toFixed(2)}`);
+    console.log(
+      `${item.cantidad}x ${item.nombre} (${(item.personalizaciones || [])
+        .map(p => p.nombre)
+        .join(', ') || 'Estándar'}) - $${item.precioTotal.toFixed(2)}`
+    );
   });
+
   console.log("------------------------------------");
   console.log(`TOTAL: $${ticketData.total.toFixed(2)}`);
-  console.log("--- FIN TICKET ---");
+  console.log(`--- FIN TICKET #${numeroCopia} ---`);
+}
+
+
+
+// Simulación de impresión de ticket
+ipcMain.on('print-ticket', (event, ticketData) => {
+
+  // Primer ticket
+  imprimirTicket(ticketData, 1);
+
+  // Segundo ticket (idéntico)
+  imprimirTicket(ticketData, 2);
 
   setTimeout(() => {
     console.log("[MAIN] Enviando confirmación de impresión...");
     mainWindow.webContents.send('print-complete', {
-        success: true,
-        orderNumber: ticketData.orderNumber
+      success: true,
+      orderNumber: ticketData.orderNumber
     });
   }, 1000);
 });
+
 
 // ============ NUEVO: SISTEMA DE PERSISTENCIA ============
 
