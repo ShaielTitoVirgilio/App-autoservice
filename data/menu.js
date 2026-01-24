@@ -44,7 +44,7 @@ let menuData = {
             {id: 'nug1', nombre: "Nuggets De Pollo x7 Unidades", desc:"Calidad Sadia", precio:150, img:"assets/images/producto_placeholder.png", personalizaciones: []}
         ],
         sandwiches:[
-            {id: 'sand1', nombre: "Calientes", desc:"Descripción Sándwich Caliente", precio:195, img:"assets/images/caliente.png", personalizaciones: []},
+            {id: 'sand1', nombre: "Calientes", desc:"Descripción Sándwich Caliente", precio:195, img:"assets/images/caliente-sf.png", personalizaciones: []},
             {id: 'sand2', nombre: "Calientes con Muzzarella", desc:"Descripción Sándwich Caliente con Muzzarella", precio:240, img:"assets/images/sandwichMuzza.png", personalizaciones: []}
         ],
         chorizos:[

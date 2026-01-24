@@ -12,7 +12,7 @@ function createWindow() {
     width: 777, 
     height: 920,
     // fullscreen: true, // Descomentar para producción en kiosko real
-    // autoHideMenuBar: true, // Descomentar para producción
+    //autoHideMenuBar: true, // Descomentar para producción
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, 

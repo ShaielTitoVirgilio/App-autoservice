@@ -837,12 +837,13 @@ if (product.video) {
 
     // --- INICIALIZACIÓN ---
     async function initialize() {
-        await window.electronAPI.resetMenuData();
+        //await window.electronAPI.resetMenuData();
+
         await loadSavedMenuData(); // Cargar datos guardados primero
         initWelcomeScreen();
         showScreen('welcome');
         updateCartDisplay();
-        window.electronAPI.resetMenuData();
+        
     }
     
     initialize()
