@@ -1,28 +1,36 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const Store = require('electron-store'); // NUEVO
+const Store = require('electron-store');
 
-// NUEVO: Configurar electron-store
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const SUPABASE_URL = process.env.vite_supabase_key || process.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.Vite_supabase_anon_key || process.env.VITE_SUPABASE_ANON_KEY || '';
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn('[MAIN] ⚠️ Faltan variables de Supabase en .env (vite_supabase_key / Vite_supabase_anon_key)');
+}
+
 const store = new Store();
 
 let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 777, 
+    width: 777,
     height: 920,
-    // fullscreen: true, // Descomentar para producción en kiosko real
-    //autoHideMenuBar: true, // Descomentar para producción
+    // fullscreen: true,
+    //autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true, 
+      contextIsolation: true,
       nodeIntegration: false,
     },
   });
 
   mainWindow.loadFile('index.html');
 
-  //mainWindow.webContents.openDevTools(); // Descomentar para ver herramientas de desarrollador
+  //mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
@@ -57,15 +65,8 @@ function imprimirTicket(ticketData, numeroCopia) {
   console.log(`--- FIN TICKET #${numeroCopia} ---`);
 }
 
-
-
-// Simulación de impresión de ticket
 ipcMain.on('print-ticket', (event, ticketData) => {
-
-  // Primer ticket
   imprimirTicket(ticketData, 1);
-
-  // Segundo ticket (idéntico)
   imprimirTicket(ticketData, 2);
 
   setTimeout(() => {
@@ -77,14 +78,19 @@ ipcMain.on('print-ticket', (event, ticketData) => {
   }, 1000);
 });
 
+// ============ Supabase config para el renderer ============
+ipcMain.handle('get-supabase-config', async () => {
+  return {
+    url: SUPABASE_URL,
+    anonKey: SUPABASE_ANON_KEY,
+  };
+});
 
-// ============ NUEVO: SISTEMA DE PERSISTENCIA ============
+// ============ Persistencia local de respaldo ============
 
-// Obtener datos del menú guardados
 ipcMain.handle('get-menu-data', async () => {
   try {
     const savedMenu = store.get('menuData');
-    console.log('[MAIN] Datos del menú cargados desde store');
     return { success: true, data: savedMenu || null };
   } catch (error) {
     console.error('[MAIN] Error al cargar menú:', error);
@@ -92,11 +98,9 @@ ipcMain.handle('get-menu-data', async () => {
   }
 });
 
-// Guardar datos del menú
 ipcMain.handle('save-menu-data', async (event, menuData) => {
   try {
     store.set('menuData', menuData);
-    console.log('[MAIN] Datos del menú guardados exitosamente');
     return { success: true };
   } catch (error) {
     console.error('[MAIN] Error al guardar menú:', error);
@@ -104,11 +108,9 @@ ipcMain.handle('save-menu-data', async (event, menuData) => {
   }
 });
 
-// Resetear datos del menú (útil para volver a valores por defecto)
 ipcMain.handle('reset-menu-data', async () => {
   try {
     store.delete('menuData');
-    console.log('[MAIN] Datos del menú reseteados');
     return { success: true };
   } catch (error) {
     console.error('[MAIN] Error al resetear menú:', error);

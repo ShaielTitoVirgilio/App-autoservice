@@ -7,8 +7,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('print-complete');
     ipcRenderer.on('print-complete', (event, response) => callback(event, response));
   },
-  
-  // NUEVO: Persistencia de datos
+
+  // Config de Supabase (vienen desde .env vía main.js)
+  getSupabaseConfig: () => ipcRenderer.invoke('get-supabase-config'),
+
+  // Persistencia local de respaldo
   getMenuData: () => ipcRenderer.invoke('get-menu-data'),
   saveMenuData: (menuData) => ipcRenderer.invoke('save-menu-data', menuData),
   resetMenuData: () => ipcRenderer.invoke('reset-menu-data')

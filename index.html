@@ -59,6 +59,14 @@
             </aside>
             <main id="product-area">
                 <h2 id="current-category-title">Selecciona una categoría</h2>
+                <div id="menu-loading" class="menu-loading hidden">
+                    <div class="spinner"></div>
+                    <p>Cargando menú...</p>
+                </div>
+                <div id="menu-error" class="menu-error hidden">
+                    <p id="menu-error-text">No se pudo cargar el menú.</p>
+                    <button id="menu-retry-btn" class="primary-button">Reintentar</button>
+                </div>
                 <div id="product-grid">
                 </div>
             </main>
@@ -135,7 +143,8 @@
 
     </div>
 
-    <script src="data/menu.js"></script>
+    <script src="node_modules/@supabase/supabase-js/dist/umd/supabase.js"></script>
+    <script src="data/supabase-client.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>

@@ -4,8 +4,11 @@ console.log("electronAPI disponible:", window.electronAPI);
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    let menuDataDefault = { ...menuData }; // Guardar copia de valores por defecto
+    // El menú vive en Supabase. Mantengo un objeto en memoria con la misma forma
+    // que usaba data/menu.js para no tocar el resto de la lógica.
+    let menuData = { categorias: [], productos: {} };
     let menuLoaded = false;
+    let unsubscribeMenu = null;
 
     // Referencias a Elementos del DOM
     const screens = {
@@ -77,29 +80,92 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Función para cargar datos guardados
-async function loadSavedMenuData() {
-    try {
-        const result = await window.electronAPI.getMenuData();
-        
-        if (result.success && result.data) {
-            // Hay datos guardados, usarlos
-            menuData = result.data;
-            console.log('[RENDERER] Menú cargado desde almacenamiento');
-            console.log('Productos cargados:', Object.keys(menuData.productos).length, 'categorías');
-        } else {
-            // No hay datos guardados, usar los valores por defecto de menu.js
-            console.log('[RENDERER] Usando menú por defecto (primera vez)');
-            // Guardar los valores por defecto en el store
-            await window.electronAPI.saveMenuData(menuData);
+    // --- CARGA DEL MENÚ DESDE SUPABASE ---
+    const menuLoadingEl = document.getElementById('menu-loading');
+    const menuErrorEl = document.getElementById('menu-error');
+    const menuErrorTextEl = document.getElementById('menu-error-text');
+    const menuRetryBtn = document.getElementById('menu-retry-btn');
+
+    function showMenuLoading(show) {
+        if (!menuLoadingEl) return;
+        menuLoadingEl.classList.toggle('hidden', !show);
+        if (show) {
+            menuErrorEl?.classList.add('hidden');
+            productGridEl.innerHTML = '';
         }
-    } catch (error) {
-        console.error('[RENDERER] Error al cargar menú:', error);
-        // En caso de error, usar valores por defecto
     }
-    
-    menuLoaded = true;
-}
+
+    function showMenuError(msg) {
+        if (!menuErrorEl) return;
+        menuErrorTextEl.textContent = msg || 'No se pudo cargar el menú.';
+        menuErrorEl.classList.remove('hidden');
+        menuLoadingEl?.classList.add('hidden');
+        productGridEl.innerHTML = '';
+    }
+
+    async function loadMenuFromSupabase() {
+        showMenuLoading(true);
+        try {
+            await window.kioskoSupabase.init();
+            const data = await window.kioskoSupabase.fetchMenu();
+            menuData = data;
+            menuLoaded = true;
+
+            // Respaldo local por si Supabase está caído más tarde
+            window.electronAPI.saveMenuData(menuData).catch(() => {});
+
+            console.log('[RENDERER] Menú cargado desde Supabase:',
+                menuData.categorias.length, 'categorías,',
+                Object.values(menuData.productos).reduce((a, p) => a + p.length, 0), 'productos');
+
+            showMenuLoading(false);
+
+            if (!unsubscribeMenu) {
+                unsubscribeMenu = window.kioskoSupabase.subscribeToMenu(async () => {
+                    try {
+                        menuData = await window.kioskoSupabase.fetchMenu();
+                        const activeCategory = categoryListEl.querySelector('li.active');
+                        if (activeCategory) renderProducts(activeCategory.dataset.categoryId);
+                    } catch (e) {
+                        console.error('[RENDERER] Error al refrescar menú en tiempo real:', e);
+                    }
+                });
+            }
+            return true;
+        } catch (error) {
+            console.error('[RENDERER] Error al cargar menú desde Supabase:', error);
+
+            // Fallback: usar último menú guardado en electron-store
+            try {
+                const result = await window.electronAPI.getMenuData();
+                if (result.success && result.data && result.data.categorias?.length) {
+                    menuData = result.data;
+                    menuLoaded = true;
+                    showMenuLoading(false);
+                    showToast('Sin conexión: usando menú guardado');
+                    return true;
+                }
+            } catch (e) { /* noop */ }
+
+            showMenuError('No se pudo cargar el menú. Verificá la conexión a internet.');
+            return false;
+        }
+    }
+
+    if (menuRetryBtn) {
+        menuRetryBtn.addEventListener('click', async () => {
+            const ok = await loadMenuFromSupabase();
+            if (ok) {
+                renderCategories();
+                const firstWithProducts = menuData.categorias.find(c => menuData.productos[c.id]?.length);
+                if (firstWithProducts) {
+                    renderProducts(firstWithProducts.id);
+                    const li = categoryListEl.querySelector(`li[data-category-id="${firstWithProducts.id}"]`);
+                    if (li) li.classList.add('active');
+                }
+            }
+        });
+    }
 
 
     // --- LÓGICA DE INACTIVIDAD ---
@@ -240,49 +306,49 @@ async function loadSavedMenuData() {
         adminEditModal.classList.remove('hidden');
     }
 
-    // Guardar cambios admin
+    // Guardar cambios admin → Supabase (compartido con web/chatbot)
     adminSaveChangesBtn.addEventListener('click', async () => {
         if (!currentEditingProduct) return;
-        
+
         const newPrice = parseFloat(adminProductPriceInput.value);
         const isLocked = adminProductLockedCheckbox.checked;
-        
+
         if (isNaN(newPrice) || newPrice < 0) {
             alert("Por favor, ingresa un precio válido.");
             return;
         }
-        
-        // Actualizar el producto en menuData
-        currentEditingProduct.precio = newPrice;
-        currentEditingProduct.locked = isLocked;
-        
-        // NUEVO: Guardar en electron-store
+
+        adminSaveChangesBtn.disabled = true;
+        adminSaveChangesBtn.textContent = 'Guardando...';
+
         try {
-            const result = await window.electronAPI.saveMenuData(menuData);
-            
-            if (result.success) {
-                console.log('[RENDERER] Cambios guardados en almacenamiento');
-                showToast(`Producto "${currentEditingProduct.nombre}" actualizado y guardado`);
-            } else {
-                console.error('[RENDERER] Error al guardar:', result.error);
-                showError('Error al guardar los cambios');
-            }
+            await window.kioskoSupabase.updateProduct(currentEditingProduct.id, {
+                precio: newPrice,
+                locked: isLocked,
+            });
+
+            // Reflejar en memoria
+            currentEditingProduct.precio = newPrice;
+            currentEditingProduct.locked = isLocked;
+
+            // Respaldo local
+            window.electronAPI.saveMenuData(menuData).catch(() => {});
+
+            showToast(`"${currentEditingProduct.nombre}" actualizado`);
         } catch (error) {
-            console.error('[RENDERER] Error al guardar cambios:', error);
+            console.error('[RENDERER] Error al guardar en Supabase:', error);
             showError('Error al guardar los cambios');
+        } finally {
+            adminSaveChangesBtn.disabled = false;
+            adminSaveChangesBtn.textContent = 'Guardar Cambios';
         }
-        
-        // Cerrar modal y re-renderizar productos
+
         adminEditModal.classList.add('hidden');
-        
-        // Re-renderizar la categoría actual
+
         const activeCategory = categoryListEl.querySelector('li.active');
         if (activeCategory) {
-            const categoryId = activeCategory.dataset.categoryId;
-            renderProducts(categoryId);
+            renderProducts(activeCategory.dataset.categoryId);
         }
-        
-        console.log("Producto actualizado:", currentEditingProduct);
     });
     
 
@@ -290,14 +356,19 @@ async function loadSavedMenuData() {
 
     // --- PANTALLA DE BIENVENIDA ---
     function initWelcomeScreen() {
-        screens.welcome.addEventListener('click', (e) => {
+        screens.welcome.addEventListener('click', async (e) => {
             // MODIFICADO: Solo proceder si NO se hizo click en el botón de admin
             if (e.target.closest('#admin-access-btn')) {
                 return;
             }
-            
+
             if (currentScreen === 'welcome' && !isAdminMode) {
                 showScreen('menu');
+
+                if (!menuLoaded) {
+                    await loadMenuFromSupabase();
+                }
+
                 renderCategories();
                 if (menuData.categorias.length > 0) {
                     const firstCategoryWithProducts = menuData.categorias.find(cat =>
@@ -754,38 +825,59 @@ if (product.video) {
 
     document.getElementById('view-cart-btn').addEventListener('click', () => showScreen('cart'));
     document.getElementById('back-to-menu-btn').addEventListener('click', () => showScreen('menu'));
-    document.getElementById('checkout-btn').addEventListener('click', () => {
-        if (cart.length > 0) {
-            const ticketData = {
-                orderNumber: Math.floor(1000 + Math.random() * 9000),
-                items: cart.map(item => ({
-                    nombre: item.nombre,
-                    cantidad: item.cantidad,
-                    personalizaciones: item.personalizaciones,
-                    precioTotal: item.precioTotal
-                })),
-                total: parseFloat(cartTotalAmountEl.textContent)
-            };
-            console.log("Enviando ticket a imprimir...");
-            window.electronAPI.printTicket(ticketData);
-        } else {
+    document.getElementById('checkout-btn').addEventListener('click', async () => {
+        if (cart.length === 0) {
             alert("Tu carrito está vacío.");
+            return;
         }
+
+        const checkoutBtn = document.getElementById('checkout-btn');
+        checkoutBtn.disabled = true;
+        checkoutBtn.textContent = 'Procesando...';
+
+        const ticketData = {
+            orderNumber: Math.floor(1000 + Math.random() * 9000),
+            items: cart.map(item => ({
+                nombre: item.nombre,
+                cantidad: item.cantidad,
+                personalizaciones: item.personalizaciones,
+                precioTotal: item.precioTotal
+            })),
+            total: parseFloat(cartTotalAmountEl.textContent)
+        };
+
+        // Guardar en Supabase (type='kiosko') — para reportes/métricas.
+        // El panel del chatbot filtra por customer_phone, no se mezclan.
+        try {
+            await window.kioskoSupabase.saveOrder(ticketData);
+            console.log("[RENDERER] Orden guardada en Supabase");
+        } catch (error) {
+            console.error("[RENDERER] No se pudo guardar la orden en Supabase:", error);
+            // No bloqueamos al cliente: seguimos imprimiendo igual.
+        }
+
+        console.log("Enviando ticket a imprimir...");
+        window.electronAPI.printTicket(ticketData);
     });
 
     window.electronAPI.onPrintComplete((event, response) => {
         console.log("Respuesta de impresión recibida:", response);
-        console.log("¿Success llegó como true?", response.success);
-    
+
+        const checkoutBtn = document.getElementById('checkout-btn');
+        if (checkoutBtn) {
+            checkoutBtn.disabled = false;
+            checkoutBtn.textContent = 'Confirmar';
+        }
+
         if (response?.success) {
             const orderNumberDisplay = document.getElementById('order-number-display');
             if (orderNumberDisplay) {
                 orderNumberDisplay.textContent = `#${response.orderNumber}`;
             }
-            
+
             cart = [];
             updateCartDisplay();
-            
+
             showScreen('screen-thankyou');
             startThankYouRedirectTimer();
         } else {
@@ -837,14 +929,13 @@ if (product.video) {
 
     // --- INICIALIZACIÓN ---
     async function initialize() {
-        //await window.electronAPI.resetMenuData();
-
-        await loadSavedMenuData(); // Cargar datos guardados primero
         initWelcomeScreen();
         showScreen('welcome');
         updateCartDisplay();
-        
+
+        // Cargamos el menú en background para no bloquear la pantalla de bienvenida.
+        await loadMenuFromSupabase();
     }
-    
-    initialize()
+
+    initialize();
 });

@@ -27,6 +27,8 @@
         "electron-builder": "^24.9.1"
     },
     "dependencies": {
+        "@supabase/supabase-js": "^2.105.1",
+        "dotenv": "^17.4.2",
         "electron-store": "^8.2.0"
     }
 }
