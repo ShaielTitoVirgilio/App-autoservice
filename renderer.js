@@ -870,11 +870,6 @@ if (product.video) {
         }
 
         if (response?.success) {
-            const orderNumberDisplay = document.getElementById('order-number-display');
-            if (orderNumberDisplay) {
-                orderNumberDisplay.textContent = `#${response.orderNumber}`;
-            }
-
             cart = [];
             updateCartDisplay();
 
